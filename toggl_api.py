@@ -15,12 +15,12 @@ class TogglAPI(object):
 
     def __init__(self, api_token, timezone):
         if len(timezone) != 6:
-            sys.exit('Incorrect Format - Use the following format +tt:t0')
+            sys.exit('Incorrect Format - Use the following format +tt:tt')
         try:
             int(timezone[1:3])
             int(timezone[4:])
         except ValueError:
-            sys.exit('Incorrect Format - Use the following format +tt:t0')
+            sys.exit('Incorrect Format - Use the following format +tt:tt')
 
         self.api_token = api_token
         self.timezone = timezone
@@ -38,7 +38,9 @@ class TogglAPI(object):
         'https://www.toggl.com/api/v8/time_entries?start_date=2010-02-05T15%3A42%3A46%2B02%3A00%2B02%3A00&end_date=2010-02-12T15%3A42%3A46%2B02%3A00%2B02%3A00'
         """
 
-        url = 'https://www.toggl.com/api/v8/{}'.format(section)
+        #url = 'https://api.track.toggl.com/api/v8/{}'.format(section)
+        url = 'https://api.track.toggl.com/api/v8/workspaces/5138622/{}'.format(section)
+        
         if len(params) > 0:
             url = url + '?{}'.format(urlencode(params))
         return url
@@ -59,23 +61,61 @@ class TogglAPI(object):
         time_zone_string = "T00:00:00{}".format(self.timezone)
         return date + time_zone_string
 
-    # Time Entry functions
-    def get_time_entries(self, start_date='', end_date='', timezone=''):
-        """Get Time Entries JSON object from Toggl within a given start_date and an end_date with a given timezone"""
-
+    def _check_date_format(self, date):
         try:
-            int(start_date[:4])
-            int(start_date[5:7])
-            int(start_date[8:10])
+            int(date[:4])
+            int(date[5:7])
+            int(date[8:10])
             print("Valid Input")
         except ValueError:
             print("Input format wrong - Use the following format yyyy-mm-dd")
             sys.exit()
 
+    def _get_dict(self):
+        ### Returns all the projects and clients in the following dict format - Project_id: (Project_name, Client_name)
+        url = self._make_url(section='clients')
+        r = self._query(url=url, method='GET')
+        try:
+            client_json = r.json()
+            client_dict = {}
+            for client in client_json:
+                client_dict[client['id']] =  client['name']        
+        except:
+            print("Something wrong with getting the client dictionary - ", r)
+        
+        url = self._make_url(section='projects')
+        r = self._query(url=url, method='GET')
+        try:
+            project_json = r.json()
+            project_dict = {}
+            for project in project_json:
+                project_dict[project['id']] = (project['name'], client_dict[project['cid']])
+            return project_dict
+        except Exception as e:
+            print("Something wrong with getting the project tuple - ", e)
+
+    # Time Entry functions
+    def get_time_entries(self, start_date='', end_date='', timezone=''):
+        """Get Time Entries JSON object from Toggl within a given start_date and an end_date with a given timezone"""
+        
+        self._check_date_format(start_date)
+        self._check_date_format(end_date)
+
+
         url = self._make_url(section='time_entries',
                              params={'start_date': self._format_date(start_date), 'end_date': self._format_date(end_date)})
         r = self._query(url=url, method='GET')
         return r.json()
+
+    def get_weekly_entries(self,start_date='', end_date='', timezone=''):
+        self._check_date_format(start_date)
+        self._check_date_format(end_date)
+
+        url = self._make_url(section='clients')#,
+                             #params={'start_date': self._format_date(start_date), 'end_date': self._format_date(end_date)})
+        r = self._query(url=url, method='GET')
+        return r.json()
+
 
     def get_hours_tracked(self, start_date, end_date):
         """Count the total tracked hours within a given start_date and an end_date
@@ -95,5 +135,20 @@ if __name__ == '__main__':
     t = TogglAPI('655a0f52169ca76917ba80cb84cf9840', '+10:00')
     start_month = '2021-06-01'
     end_month = '2021-07-22'
-    f  =t.get_time_entries(start_date=start_month, end_date = end_month)
-    print(f[1])
+    tup = t._get_dict()
+    print(tup)
+    # f = t.get_time_entries(start_date=start_month, end_date = end_month)
+    # project_time_dict = {}
+    # for tar in f:
+    #     try:
+    #         if tar['pid'] in f:
+    #             project_time_dict[tar['pid']] += tar['duration']
+    #         else:
+    #             project_time_dict[tar['pid']] = tar['duration']
+    #     except:
+    #         if 'no_project' in f:
+    #              project_time_dict['no_project'] += tar['duration']
+    #         else:
+    #             project_time_dict['no_project'] = 0
+
+    #print(len(project_time_dict))

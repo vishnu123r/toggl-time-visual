@@ -5,10 +5,9 @@
 import requests
 from urllib.parse import urlencode
 from requests.auth import HTTPBasicAuth
-from datetime import datetime
-from dateutil.relativedelta import relativedelta
-import calendar
 import sys
+import pandas as pd
+import numpy as np
 
 class TogglAPI(object):
     """A wrapper for Toggl Api"""
@@ -38,9 +37,11 @@ class TogglAPI(object):
         'https://www.toggl.com/api/v8/time_entries?start_date=2010-02-05T15%3A42%3A46%2B02%3A00%2B02%3A00&end_date=2010-02-12T15%3A42%3A46%2B02%3A00%2B02%3A00'
         """
 
-        #url = 'https://api.track.toggl.com/api/v8/{}'.format(section)
-        url = 'https://api.track.toggl.com/api/v8/workspaces/5138622/{}'.format(section)
-        
+        if section == "projects":
+            url = 'https://api.track.toggl.com/api/v8/workspaces/5138622/{}'.format(section)
+        else:
+            url = 'https://api.track.toggl.com/api/v8/{}'.format(section)
+       
         if len(params) > 0:
             url = url + '?{}'.format(urlencode(params))
         return url
@@ -66,12 +67,11 @@ class TogglAPI(object):
             int(date[:4])
             int(date[5:7])
             int(date[8:10])
-            print("Valid Input")
         except ValueError:
             print("Input format wrong - Use the following format yyyy-mm-dd")
             sys.exit()
 
-    def _get_dict(self):
+    def _get_project_dict(self):
         ### Returns all the projects and clients in the following dict format - Project_id: (Project_name, Client_name)
         url = self._make_url(section='clients')
         r = self._query(url=url, method='GET')
@@ -94,6 +94,18 @@ class TogglAPI(object):
         except Exception as e:
             print("Something wrong with getting the project tuple - ", e)
 
+    def _convert_timezone(self, df):
+        df['Date'] = df['Start_date'].str[8:10].astype(int)
+        df['year'] = df['Start_date'].str[0:8]
+        df['time'] = df['Start_date'].str[11:13].astype(int) + int(self.timezone[1:3])
+
+        df['que'] = np.where((df['time'] >= 24) , df['Date'] + 1, df['Date'])
+        df['Date'] = df['year'] + df['que'].astype(str)
+        df.drop(['year', 'time', 'que', 'Start_date'], axis = 1, inplace=True)
+        df = df.reindex(columns = ['Date', 'Description','Project_name', 'Client_name', 'Duration'])
+
+        return df
+
     # Time Entry functions
     def get_time_entries(self, start_date='', end_date='', timezone=''):
         """Get Time Entries JSON object from Toggl within a given start_date and an end_date with a given timezone"""
@@ -105,17 +117,33 @@ class TogglAPI(object):
         url = self._make_url(section='time_entries',
                              params={'start_date': self._format_date(start_date), 'end_date': self._format_date(end_date)})
         r = self._query(url=url, method='GET')
-        return r.json()
 
-    def get_weekly_entries(self,start_date='', end_date='', timezone=''):
-        self._check_date_format(start_date)
-        self._check_date_format(end_date)
+        return self.convert_json_df(r.json())
 
-        url = self._make_url(section='clients')#,
-                             #params={'start_date': self._format_date(start_date), 'end_date': self._format_date(end_date)})
-        r = self._query(url=url, method='GET')
-        return r.json()
+    def convert_json_df(self, json_file):
+        '''
+        This methods converts the resultant json file from API to a df which can be used for analysis
+        '''
+        time_list = []
+        project_dict = self._get_project_dict()
+        for json in json_file:
+            start = json['start']
+            stop = json['stop']
+            duration = json['duration']
+            try: 
+                description = json['description']
+            except:
+                description = 'no_description'
+            try:
+                project = project_dict[json['pid']]
+            except:
+                project = ("no_project", "no_client")
+            time_list.append((start, duration, description, project[0], project[1])) 
 
+        df = pd.DataFrame.from_records(time_list, columns =['Start_date', 'Duration', 'Description', 'Project_name', 'Client_name'])
+        df = self._convert_timezone(df)
+
+        return df
 
     def get_hours_tracked(self, start_date, end_date):
         """Count the total tracked hours within a given start_date and an end_date
@@ -135,20 +163,9 @@ if __name__ == '__main__':
     t = TogglAPI('655a0f52169ca76917ba80cb84cf9840', '+10:00')
     start_month = '2021-06-01'
     end_month = '2021-07-22'
-    tup = t._get_dict()
-    print(tup)
-    # f = t.get_time_entries(start_date=start_month, end_date = end_month)
-    # project_time_dict = {}
-    # for tar in f:
-    #     try:
-    #         if tar['pid'] in f:
-    #             project_time_dict[tar['pid']] += tar['duration']
-    #         else:
-    #             project_time_dict[tar['pid']] = tar['duration']
-    #     except:
-    #         if 'no_project' in f:
-    #              project_time_dict['no_project'] += tar['duration']
-    #         else:
-    #             project_time_dict['no_project'] = 0
+    # tup = t._get_dict()
+    # print(tup)
+    f = t.get_time_entries(start_date=start_month, end_date = end_month)
+    print(f.head())
 
-    #print(len(project_time_dict))
+

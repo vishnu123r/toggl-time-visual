@@ -28,17 +28,12 @@ class TogglAPI(object):
         """Constructs and returns an api url to call with the section of the API to be called
         and parameters defined by key/pair values in the paramas dict.
         Default section is "time_entries" which evaluates to "time_entries.json"
-        >>> t = TogglAPI('_SECRET_TOGGLE_API_TOKEN_')
-        >>> t._make_url(section='time_entries', params = {})
-        'https://www.toggl.com/api/v8/time_entries'
-        >>> t = TogglAPI('_SECRET_TOGGLE_API_TOKEN_')
-        >>> t._make_url(section='time_entries', 
-                        params = {'start_date': '2010-02-05T15:42:46+02:00', 'end_date': '2010-02-12T15:42:46+02:00'})
-        'https://www.toggl.com/api/v8/time_entries?start_date=2010-02-05T15%3A42%3A46%2B02%3A00%2B02%3A00&end_date=2010-02-12T15%3A42%3A46%2B02%3A00%2B02%3A00'
         """
 
         if section == "projects":
             url = 'https://api.track.toggl.com/api/v8/workspaces/5138622/{}'.format(section)
+        elif section == "details":
+            url = 'https://api.track.toggl.com/reports/api/v2/{}'.format(section)
         else:
             url = 'https://api.track.toggl.com/api/v8/{}'.format(section)
        
@@ -94,78 +89,27 @@ class TogglAPI(object):
         except Exception as e:
             print("Something wrong with getting the project tuple - ", e)
 
-    def _convert_timezone(self, df):
-        df['Date'] = df['Start_date'].str[8:10].astype(int)
-        df['year'] = df['Start_date'].str[0:8]
-        df['time'] = df['Start_date'].str[11:13].astype(int) + int(self.timezone[1:3])
-
-        df['que'] = np.where((df['time'] >= 24) , df['Date'] + 1, df['Date'])
-        df['Date'] = df['year'] + df['que'].astype(str)
-        df.drop(['year', 'time', 'que', 'Start_date'], axis = 1, inplace=True)
-        df = df.reindex(columns = ['Date', 'Description','Project_name', 'Client_name', 'Duration'])
-
-        return df
-
     # Time Entry functions
-    def get_time_entries(self, start_date='', end_date='', timezone=''):
+    def get_time_entries(self, start_date='', end_date=''):
         """Get Time Entries JSON object from Toggl within a given start_date and an end_date with a given timezone"""
         
         self._check_date_format(start_date)
         self._check_date_format(end_date)
 
 
-        url = self._make_url(section='time_entries',
-                             params={'start_date': self._format_date(start_date), 'end_date': self._format_date(end_date)})
+        url = self._make_url(section='details',
+                             params={'start_date': self._format_date(start_date), 'end_date': self._format_date(end_date), 'user_agent':'vishnu123r@gmail.com',"workspace_id":'5138622'})
         r = self._query(url=url, method='GET')
 
-        return self.convert_json_df(r.json())
-
-    def convert_json_df(self, json_file):
-        '''
-        This methods converts the resultant json file from API to a df which can be used for analysis
-        '''
-        time_list = []
-        project_dict = self._get_project_dict()
-        for json in json_file:
-            start = json['start']
-            stop = json['stop']
-            duration = json['duration']
-            try: 
-                description = json['description']
-            except:
-                description = 'no_description'
-            try:
-                project = project_dict[json['pid']]
-            except:
-                project = ("no_project", "no_client")
-            time_list.append((start, duration, description, project[0], project[1])) 
-
-        df = pd.DataFrame.from_records(time_list, columns =['Start_date', 'Duration', 'Description', 'Project_name', 'Client_name'])
-        df = self._convert_timezone(df)
-
-        return df
-
-    def get_hours_tracked(self, start_date, end_date):
-        """Count the total tracked hours within a given start_date and an end_date
-        excluding any RUNNING real time tracked time entries
-        """
-
-        time_entries = self.get_time_entries(start_date=start_date, end_date=end_date)
-        if time_entries is None:
-            return 0
-
-        total_seconds_tracked = sum(max(entry['duration'], 0) for entry in time_entries)
-
-        return (total_seconds_tracked / 60.0) / 60.0
-
+        return r.json()
 
 if __name__ == '__main__':
-    t = TogglAPI('655a0f52169ca76917ba80cb84cf9840', '+10:00')
-    start_month = '2021-06-01'
-    end_month = '2021-07-22'
-    # tup = t._get_dict()
-    # print(tup)
-    f = t.get_time_entries(start_date=start_month, end_date = end_month)
-    print(f.head())
+    api_token = '655a0f52169ca76917ba80cb84cf9840'
+    start_date ='2020-09-23'
+    end_date = '2021-10-06'
+    t = TogglAPI(api_token, '+10:00')
+    f = t.get_time_entries( start_date, end_date)
+    print(f.keys())
+    print(f['data'])
 
 

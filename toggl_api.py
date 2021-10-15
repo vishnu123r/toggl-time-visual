@@ -1,6 +1,5 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-# @author Mosab Ibrahim <mosab.a.ibrahim@gmail.com>
 
 import requests
 from urllib.parse import urlencode
@@ -8,11 +7,15 @@ from requests.auth import HTTPBasicAuth
 import sys
 import pandas as pd
 import numpy as np
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class TogglAPI(object):
     """A wrapper for Toggl Api"""
 
-    def __init__(self, api_token, timezone):
+    def __init__(self, api_token, timezone = '+10:00'):
         if len(timezone) != 6:
             sys.exit('Incorrect Format - Use the following format +tt:tt')
         try:
@@ -39,11 +42,13 @@ class TogglAPI(object):
        
         if len(params) > 0:
             url = url + '?{}'.format(urlencode(params))
+
         return url
 
     def _query(self, url, method):
         """Performs the actual call to Toggl API"""
         url = url
+
         headers = {'content-type': 'application/json'}
         if method == 'GET':
             return requests.get(url, headers=headers, auth=HTTPBasicAuth(self.api_token, 'api_token'))
@@ -80,6 +85,7 @@ class TogglAPI(object):
         
         url = self._make_url(section='projects')
         r = self._query(url=url, method='GET')
+        
         try:
             project_json = r.json()
             project_dict = {}
@@ -96,20 +102,44 @@ class TogglAPI(object):
         self._check_date_format(start_date)
         self._check_date_format(end_date)
 
-
         url = self._make_url(section='details',
-                             params={'start_date': self._format_date(start_date), 'end_date': self._format_date(end_date), 'user_agent':'vishnu123r@gmail.com',"workspace_id":'5138622'})
+                             params={'since': self._format_date(start_date), 'until': self._format_date(end_date), 
+                             'user_agent':'vishnu123r@gmail.com',"workspace_id":'5138622'})
         r = self._query(url=url, method='GET')
+        if r.ok:
+            json_list = []
+            json_list.append(r.json()['data'])
+            total_count = r.json()['total_count']
+            pages = int(total_count/50) + 1
+            print('Retrieving page - 1') 
 
-        return r.json()
+            for page in range(2,pages+1):
+                print('Retrieving page - {}'.format(page))
+                url = self._make_url(section='details',
+                                params={'since': self._format_date(start_date), 
+                                'until': self._format_date(end_date), 'user_agent':'vishnu123r@gmail.com',"workspace_id":'5138622',
+                                'page': str(page)})
+                
+                r = self._query(url=url, method='GET')
+
+                json_list.append(r.json()['data'])
+
+            json_list = [item for sublist in json_list for item in sublist]
+
+            return json_list
+
+        else:
+            sys.exit(r.content)
+
+        
 
 if __name__ == '__main__':
-    api_token = '655a0f52169ca76917ba80cb84cf9840'
-    start_date ='2020-09-23'
-    end_date = '2021-10-06'
+    api_token = os.getenv('toggl_api_key')
+    since ='2021-01-23'
+    until = '2021-08-06'
     t = TogglAPI(api_token, '+10:00')
-    f = t.get_time_entries( start_date, end_date)
-    print(f.keys())
-    print(f['data'])
+    f = t.get_time_entries( since, until)
+    #print([fi['start'] for fi in f])
+    print(f[-1])
 
 

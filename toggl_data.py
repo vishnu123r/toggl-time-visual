@@ -5,20 +5,39 @@ import pandas as pd
 import numpy as np
 from toggl_api import TogglAPI
 import toggl_api
+import sys
+import pytz
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+from helpers import convert_json_df
+from postgre_api import PostgresAPI
 
-class Toggl_Data(object):
 
-    def __init__(self, api_token, timezone, start_date, end_date):
+class TogglData(object):
+
+    def __init__(self, api_token, timezone, postgres_db, postgres_pass):
         self.timezone = timezone
         self.api_token = api_token
-        self.start_date = start_date
-        self.end_date = end_date
+        self.postgres_db = postgres_db
+        self.postgres_pass = postgres_pass
 
         toggl_api = TogglAPI(api_token, timezone)
-        self.json_file = toggl_api.get_time_entries(self.start_date, self.end_date, self.timezone)
         self.project_dict = toggl_api._get_project_dict()
+        self.project_list = []
+        self.client_list = []
+        for key, value in self.project_dict.items():
+            self.project_list.append(value[0])
+            self.client_list.append(value[1])
+        self.client_list = list(set(self.client_list))
+
+        self.postgres = PostgresAPI(postgres_db, postgres_pass, host = 'localhost', port = 5432,  user = 'postgres')
 
     def _convert_timezone(self, df):
+        """
+        Converts the time accorsing to the current time zone. Currently not used as the API returns the values in the correct time zone. 
+        There is an issue with the algo. It returns does not change the date appropriately if month end.
+        """
+
         df['Date'] = df['Start_date'].str[8:10].astype(int)
         df['year'] = df['Start_date'].str[0:8]
         df['time'] = df['Start_date'].str[11:13].astype(int) + int(self.timezone[1:3])
@@ -36,41 +55,39 @@ class Toggl_Data(object):
 
         return df
 
-    def convert_json_df(self, json_file):
+    def sum_time_by_client(self, client_name, start_date = (datetime.now() - relativedelta(years=1)).isoformat()[0:10], end_date = datetime.now().isoformat()[0:10], ma = True):
         '''
-        This methods converts the resultant json file from API to a df which can be used for analysis
+        Sums all the client activity for the day and adds zero values when there is no activity 
         '''
-        time_list = []
 
-        for json in json_file:
-            if int(json['duration']) == 0:
-                continue
-            start = json['start']
-            stop = json['stop']
-            duration = json['duration']
-            try: 
-                description = json['description']
-            except:
-                description = 'no_description'
-            try:
-                project = self.project_dict[json['pid']]
-            except:
-                project = ("no_project", "no_client")
-            time_list.append((start, duration, description, project[0], project[1])) 
+        if client_name not in self.client_list:
+            print('Please enter a client from this list - ', self.client_list)
+            sys.exit()
 
-        df = pd.DataFrame.from_records(time_list, columns =['Start_date', 'Duration', 'Description', 'Project_name', 'Client_name'])
-        df = self._convert_timezone(df)
+        df = self.postgres.get_data(start_date, end_date)
+        df = round(df.groupby(['client_name','date'])['duration'].sum()/3600/1000,2)
+        df = df.reset_index().reindex(columns = ['date', 'client_name', 'duration'] )
+        df = df.set_index('date')
+        df = df[df['client_name'] == client_name]
+        df = self._convert_idx_datetime(df, start_date, end_date)
+        df['client_name'] = client_name
+
+        if ma is True:
+            df['ma'] = round(df.rolling(window=7).mean(),2)
+            df.dropna(inplace=True)
 
         return df
 
-    def sum_time_by_client(self, client_name):
-
-        df = self.convert_json_df(self.json_file)
-        df = round(df.groupby(['Client_name','Date'])['Duration'].sum()/3600,2)
-        df = df.reset_index().reindex(columns = ['Date', 'Client_name', 'Duration'] )
-        df = df.set_index('Date')
-        df = df[df['Client_name'] == client_name]
-        #df = self._convert_idx_datetime(df, self.start_date, self.end_date)
+    def sum_time_all_clients(self, start_date = (datetime.now() - relativedelta(years=1)).isoformat()[0:10], end_date = datetime.now().isoformat()[0:10], ma = True):
+        '''
+        Combines all the dataframes from sum_time_by_clients() into a single dataframe.
+        '''
+        df_list = []
+        for client in self.client_list:
+            df = self.sum_time_by_client(client, start_date, end_date, ma)
+            df_list.append(df)
+            
+        df = pd.concat(df_list)
 
         return df
 

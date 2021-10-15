@@ -44,8 +44,7 @@ class PostgresAPI(object):
     
     def _post_data(self, df):
 
-        df_ok = self._is_df_entries_ok(df)
-        if df_ok:
+        if self._df_ok(df):
             try:
                 df.to_sql(f'{self.table}', self.engine, index= False, if_exists='append')
 
@@ -73,7 +72,7 @@ class PostgresAPI(object):
         else:
             return "Please check the time entries. There are outlier values"
 
-    def _toggl_df(self,start_date, end_date):
+    def _get_toggl_df(self,start_date, end_date):
         """
         Connects to toggl api and returns data as a DataFrame
         """
@@ -85,7 +84,7 @@ class PostgresAPI(object):
 
         return df
 
-    def _is_df_entries_ok(self, df):
+    def _df_ok(self, df):
         df = round(df.groupby(by= 'date')['duration'].sum()/3600/1000,2)
         df = df.reset_index().reindex(columns = ['date', 'duration'] )
         i = 0
@@ -94,15 +93,14 @@ class PostgresAPI(object):
                 print("There is an issue with the following date and duration (Please recheck them): ", date, duration)
                 i+=1
 
-        if i >0:
+        if i > 0:
             return False
 
         else:
             return True
         
     def _get_date_data(self):
-            
-            ### Check if the date exists
+
         try:
             conn = self.engine.raw_connection()
             cur = conn.cursor()
@@ -121,36 +119,44 @@ class PostgresAPI(object):
             cur.close()
             conn.close()
 
-    def save_data(self, start_date, end_date):
+    def _save_data_from_toggl(self, start_date, end_date):
 
         """ This method checks the database for existing data and retirves and saves only the required data to the database"""
+
+        if self.table_exists == False:
+            df = self._get_toggl_df(start_date, end_date)
+            self._post_data(df)
+            return "New Table has been created"
+        
+        date_list = self._get_date_data()
+        
+        if start_date in date_list and end_date in date_list:
+            return "Data is already in the database"
 
         try:
             conn = self.engine.raw_connection()
             cur = conn.cursor()
- 
-            if self.table_exists == False:
-                df = self._toggl_df(start_date, end_date)
-
-            date_list = self._get_date_data()
 
             if start_date not in date_list and end_date not in date_list:
                 print("No start date and No end date")
                 cur.execute(f"DELETE FROM {self.table}")
-                df = self._toggl_df(start_date, end_date)              
+                conn.commit()
+                df = self._get_toggl_df(start_date, end_date)              
 
             elif end_date not in date_list:
                 print("No end date")
                 new_start_date = max(date_list, key=lambda d: datetime.strptime(d, '%Y-%m-%d'))
                 cur.execute(f"DELETE FROM {self.table} WHERE date = '{new_start_date}'")
-                df = self._toggl_df(new_start_date, end_date)
+                conn.commit()
+                df = self._get_toggl_df(new_start_date, end_date)
 
             elif start_date not in date_list:
                 print("No start date")
                 new_end_date = min(date_list, key=lambda d: datetime.strptime(d, '%Y-%m-%d'))
                 print(new_end_date)
                 cur.execute(f"DELETE FROM {self.table} WHERE date = '{new_end_date}'")
-                df = self._toggl_df(start_date, new_end_date)
+                conn.commit()
+                df = self._get_toggl_df(start_date, new_end_date)
 
         finally:
             cur.close()
@@ -161,8 +167,8 @@ class PostgresAPI(object):
 
     def get_data(self, start_date, end_date):
 
+        self._save_data_from_toggl(start_date, end_date)
         try:
-            self.save_data(start_date, end_date)
             conn = self.engine.raw_connection()
             cur = conn.cursor()
             cur.execute(f"select * from {self.table} where date between '{start_date}' and '{end_date}'")
@@ -176,8 +182,8 @@ class PostgresAPI(object):
         return df
 
 if __name__=='__main__':
-    start_date ='2021-08-11'
-    end_date = '2021-09-06'
+    start_date ='2021-08-08'
+    end_date = '2021-09-16'
     p = PostgresAPI('toggldb', 'danekane11')
     df = p.get_data(start_date, end_date)
 

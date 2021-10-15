@@ -24,6 +24,6 @@ timezone = '+10:00'
 client = 'Survival'
 
 d = TogglData(os.getenv('toggl_api_key'), timezone, os.getenv('postgres_db'),os.getenv('postgres_pass'))
-df = d.sum_time_by_client(client, start_date = start_date, end_date = end_date, ma = True)
+df = d.sum_time_by_client_ma(client, start_date = start_date, end_date = end_date)
 
 print(df)

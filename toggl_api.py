@@ -95,7 +95,43 @@ class TogglAPI(object):
         except Exception as e:
             print("Something wrong with getting the project tuple - ", e)
 
-    # Time Entry functions
+    
+    def _get_page_number(self, response):
+
+        """
+        Gets the number of pages from the json response
+        """
+
+        total_count = response.json()['total_count']
+        pages = int(total_count/50) + 1
+        return pages
+
+    def _extract_data(self, start_date, end_date, response):
+
+        """
+        Makes repeated api calls as per the number of pages and gets the required data as a list
+        """
+
+        data_list = []
+        data_list.append(response.json()['data'])
+        pages = self._get_page_number(response)
+        print('Retrieving page - 1') 
+
+        for page in range(2, pages+1):
+            print('Retrieving page - {}'.format(page))
+            url = self._make_url(section='details',
+                                params={'since': self._format_date(start_date), 
+                                'until': self._format_date(end_date), 'user_agent':'vishnu123r@gmail.com',"workspace_id":'5138622',
+                                'page': str(page)})
+                
+            response = self._query(url=url, method='GET')
+
+            data_list.append(response.json()['data'])
+
+        data_list = [item for sublist in data_list for item in sublist]
+        
+        return data_list
+
     def get_time_entries(self, start_date='', end_date=''):
         """Get Time Entries JSON object from Toggl within a given start_date and an end_date with a given timezone"""
         
@@ -105,33 +141,16 @@ class TogglAPI(object):
         url = self._make_url(section='details',
                              params={'since': self._format_date(start_date), 'until': self._format_date(end_date), 
                              'user_agent':'vishnu123r@gmail.com',"workspace_id":'5138622'})
-        r = self._query(url=url, method='GET')
-        if r.ok:
-            json_list = []
-            json_list.append(r.json()['data'])
-            total_count = r.json()['total_count']
-            pages = int(total_count/50) + 1
-            print('Retrieving page - 1') 
+        
+        response = self._query(url=url, method='GET')
+        if response.ok:
+            data_list = self._extract_data(start_date, end_date, response)
 
-            for page in range(2,pages+1):
-                print('Retrieving page - {}'.format(page))
-                url = self._make_url(section='details',
-                                params={'since': self._format_date(start_date), 
-                                'until': self._format_date(end_date), 'user_agent':'vishnu123r@gmail.com',"workspace_id":'5138622',
-                                'page': str(page)})
-                
-                r = self._query(url=url, method='GET')
-
-                json_list.append(r.json()['data'])
-
-            json_list = [item for sublist in json_list for item in sublist]
-
-            return json_list
+            return data_list
 
         else:
-            sys.exit(r.content)
+            sys.exit(response.content)
 
-        
 
 if __name__ == '__main__':
     api_token = os.getenv('toggl_api_key')
@@ -140,6 +159,6 @@ if __name__ == '__main__':
     t = TogglAPI(api_token, '+10:00')
     f = t.get_time_entries( since, until)
     #print([fi['start'] for fi in f])
-    print(f[-1])
+    print(f[1])
 
 

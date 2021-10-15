@@ -12,14 +12,14 @@ from dateutil.relativedelta import relativedelta
 from helpers import convert_json_df
 from postgre_api import PostgresAPI
 
-
 class TogglData(object):
 
-    def __init__(self, api_token, timezone, postgres_db, postgres_pass):
+    start_date = (datetime.now() - relativedelta(years=1)).isoformat()[0:10]
+    end_date = datetime.now().isoformat()[0:10]
+
+    def __init__(self, api_token, timezone, pg_db, pg_pass, pg_host = 'localhost', pg_port = 5432,  pg_user = 'postgres',  pg_table = 'time_entries'):
         self.timezone = timezone
         self.api_token = api_token
-        self.postgres_db = postgres_db
-        self.postgres_pass = postgres_pass
 
         toggl_api = TogglAPI(api_token, timezone)
         self.project_dict = toggl_api._get_project_dict()
@@ -29,13 +29,16 @@ class TogglData(object):
             self.project_list.append(value[0])
             self.client_list.append(value[1])
         self.client_list = list(set(self.client_list))
+    
+        self.pg_db = pg_db
+        self.pg_pass = pg_pass
+        self.postgres = PostgresAPI(pg_db, pg_pass, host = pg_host, port = pg_port,  user = pg_user,  table = pg_table)
 
-        self.postgres = PostgresAPI(postgres_db, postgres_pass, host = 'localhost', port = 5432,  user = 'postgres')
 
     def _convert_timezone(self, df):
         """
-        Converts the time accorsing to the current time zone. Currently not used as the API returns the values in the correct time zone. 
-        There is an issue with the algo. It returns does not change the date appropriately if month end.
+        Converts the time according to the current time zone. Currently not used as the API returns the values in the correct time zone. 
+        There is an issue with the algo. It does not change the date appropriately if month end (31st -> 32nd).
         """
 
         df['Date'] = df['Start_date'].str[8:10].astype(int)
@@ -49,13 +52,17 @@ class TogglData(object):
         return df
     
     def _convert_idx_datetime(self, df, start_date, end_date):
+        """
+        Converts dataframe to a time series
+        """
+
         idx = pd.date_range(start_date, end_date)
         df.index = pd.DatetimeIndex(df.index)
         df = df.reindex(idx, fill_value=0)
 
         return df
 
-    def sum_time_by_client(self, client_name, start_date = (datetime.now() - relativedelta(years=1)).isoformat()[0:10], end_date = datetime.now().isoformat()[0:10], ma = True):
+    def sum_time_by_client(self, client_name, start_date = (datetime.now() - relativedelta(years=1)).isoformat()[0:10], end_date = datetime.now().isoformat()[0:10]):
         '''
         Sums all the client activity for the day and adds zero values when there is no activity 
         '''
@@ -72,19 +79,42 @@ class TogglData(object):
         df = self._convert_idx_datetime(df, start_date, end_date)
         df['client_name'] = client_name
 
-        if ma is True:
-            df['ma'] = round(df.rolling(window=7).mean(),2)
-            df.dropna(inplace=True)
-
         return df
 
-    def sum_time_all_clients(self, start_date = (datetime.now() - relativedelta(years=1)).isoformat()[0:10], end_date = datetime.now().isoformat()[0:10], ma = True):
+
+    def sum_time_all_clients(self, start_date = start_date, end_date = end_date):
         '''
-        Combines all the dataframes from sum_time_by_clients() into a single dataframe.
+        Returns all the client activity for the alotted date interval.
         '''
         df_list = []
         for client in self.client_list:
-            df = self.sum_time_by_client(client, start_date, end_date, ma)
+            df = self.sum_time_by_client(client, start_date, end_date)
+            df_list.append(df)
+            
+        df = pd.concat(df_list)
+
+        return df
+
+    def sum_time_by_client_ma(self, client_name, start_date = (datetime.now() - relativedelta(years=1)).isoformat()[0:10], end_date = datetime.now().isoformat()[0:10], window = 7):
+
+        """"
+        Sums all the client activity for each day and adds moving average column
+        """
+
+        df = self.sum_time_by_client(client_name, start_date, end_date)
+        df['ma'] = round(df.rolling(window=window).mean(),2)
+        df.dropna(inplace=True)
+
+        return df
+
+    def sum_time_all_clients_ma(self, start_date = start_date, end_date = end_date, window = 7):
+        '''
+        Returns all the client activity for the alotted time and the respective moving averages.
+        '''
+
+        df_list = []
+        for client in self.client_list:
+            df = self.sum_time_by_client_ma(client, start_date, end_date, window)
             df_list.append(df)
             
         df = pd.concat(df_list)

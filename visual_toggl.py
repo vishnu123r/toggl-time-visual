@@ -12,8 +12,11 @@ load_dotenv()
 
 app = Dash(__name__, external_stylesheets = [dbc.themes.CYBORG])
 
-d = TogglData(os.getenv('toggl_api_key'),os.getenv('postgres_db'),os.getenv('postgres_pass'))
-df = d.sum_time_all_clients()
+start_date ='2021-05-01'
+end_date = '2021-10-14'
+
+d = TogglData(os.getenv('toggl_api_key'),os.getenv('time_zone'), os.getenv('postgres_db'),os.getenv('postgres_pass'))
+df = d.sum_time_all_clients_ma(start_date, end_date, window = 14)
 clients = d.client_list
 
 dropdown_list = []
@@ -25,11 +28,11 @@ for client in clients:
     dropdown_list.append(dict)
 
 
-fig_phd = px.line(df[df["Client_name"] == 'PhD'].iloc[0:100], y="ma", title='Time spent for {}'.format('PhD'), template = "plotly_dark")
-fig_fin = px.line(df[df["Client_name"] == 'Financial'], y="ma", title='Time spent for {}'.format('Financial'), template = "plotly_dark")
-fig_sleep = px.line(df[df["Client_name"] == 'Sleep'], y="ma", title='Time spent for {}'.format('Sleep'), template = "plotly_dark")
-fig_novalue = px.line(df[df["Client_name"] == 'No Value'], y="ma", title='Time spent for {}'.format('No Value'), template = "plotly_dark")
-fig_survival = px.line(df[df["Client_name"] == 'Survival'], y="ma", title='Time spent for {}'.format('Survival'), template = "plotly_dark")
+fig_phd = px.line(df[df["client_name"] == 'PhD'], y="ma", title='Time spent for {}'.format('PhD'), template = "plotly_dark")
+fig_fin = px.line(df[df["client_name"] == 'Financial'], y="ma", title='Time spent for {}'.format('Financial'), template = "plotly_dark")
+fig_sleep = px.line(df[df["client_name"] == 'Sleep'], y="ma", title='Time spent for {}'.format('Sleep'), template = "plotly_dark")
+fig_novalue = px.line(df[df["client_name"] == 'No Value'], y="ma", title='Time spent for {}'.format('No Value'), template = "plotly_dark")
+fig_survival = px.line(df[df["client_name"] == 'Survival'], y="ma", title='Time spent for {}'.format('Survival'), template = "plotly_dark")
 
 app.layout = html.Div(
     [

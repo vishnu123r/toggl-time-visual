@@ -8,11 +8,13 @@ def convert_json_df(json_file, project_dict):
 
     for json in json_file:
 
-        if int(json['dur']) == 0:
+        blank_entry = int(json['dur']) == 0
+        if blank_entry:
             continue
-        start = json['start']
-        stop = json['end']
+        id = str(json['id'])
+        start_time = json['start']
         duration = json['dur']
+        tags = json['tags']
         try: 
             description = json['description']
         except:
@@ -21,11 +23,10 @@ def convert_json_df(json_file, project_dict):
             project = project_dict[json['pid']]
         except:
             project = ("no_project", "no_client")
-        time_list.append((start, duration, description, project[0], project[1])) 
+        time_list.append((id, start_time, duration, description, project[0], project[1], tags)) 
 
-    df = pd.DataFrame.from_records(time_list, columns =['start_date', 'duration', 'description', 'project_name', 'client_name'])
+    df = pd.DataFrame.from_records(time_list, columns =['id','start_date', 'duration', 'description', 'project_name', 'client_name', 'tags'])
     df['date'] = df['start_date'].str[0:10]
-    #df["date"] = pd.to_datetime(df["date"])
     df.drop(['start_date'], axis = 1, inplace=True)
 
     return df

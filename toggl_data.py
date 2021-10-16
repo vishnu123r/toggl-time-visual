@@ -4,13 +4,15 @@
 import pandas as pd
 import numpy as np
 from toggl_api import TogglAPI
-import toggl_api
 import sys
-import pytz
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
-from helpers import convert_json_df
 from postgre_api import PostgresAPI
+
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class TogglData(object):
 
@@ -32,7 +34,11 @@ class TogglData(object):
     
         self.pg_db = pg_db
         self.pg_pass = pg_pass
-        self.postgres = PostgresAPI(pg_db, pg_pass, host = pg_host, port = pg_port,  user = pg_user,  table = pg_table)
+        self.pg_host = pg_host
+        self.pg_port = pg_port
+        self.pg_user = pg_user
+        self.pg_table = pg_table
+        
 
 
     def _convert_timezone(self, df):
@@ -62,6 +68,12 @@ class TogglData(object):
 
         return df
 
+    def _deduct_window_date(self, start_date, window):
+        start_date_obj = datetime.strptime(start_date,"%Y-%m-%d")   
+        start_date = (start_date_obj- relativedelta(days=window-1)).isoformat()[:10]
+        
+        return start_date
+
     def sum_time_by_client(self, client_name, start_date = (datetime.now() - relativedelta(years=1)).isoformat()[0:10], end_date = datetime.now().isoformat()[0:10]):
         '''
         Sums all the client activity for the day and adds zero values when there is no activity 
@@ -71,7 +83,8 @@ class TogglData(object):
             print('Please enter a client from this list - ', self.client_list)
             sys.exit()
 
-        df = self.postgres.get_data(start_date, end_date)
+        postgres = PostgresAPI(self.pg_db, self.pg_pass, host = self.pg_host, port = self.pg_port,  user = self.pg_user,  table = self.pg_table)
+        df = postgres.get_data(start_date, end_date)
         df = round(df.groupby(['client_name','date'])['duration'].sum()/3600/1000,2)
         df = df.reset_index().reindex(columns = ['date', 'client_name', 'duration'] )
         df = df.set_index('date')
@@ -101,6 +114,9 @@ class TogglData(object):
         Sums all the client activity for each day and adds moving average column
         """
 
+        start_date = self._deduct_window_date(start_date, window)
+        print('This is the start date - ', start_date)
+
         df = self.sum_time_by_client(client_name, start_date, end_date)
         df['ma'] = round(df.rolling(window=window).mean(),2)
         df.dropna(inplace=True)
@@ -122,4 +138,11 @@ class TogglData(object):
         return df
 
 if __name__ == '__main__':
-    pass
+    start_date ='2021-05-01'
+    end_date = '2021-10-14'
+    timezone = '+10:00'
+    client = 'Survival'
+
+    d = TogglData(os.getenv('toggl_api_key'), timezone, os.getenv('postgres_db'),os.getenv('postgres_pass'))
+    df = d.sum_time_all_clients_ma( start_date = start_date, end_date = end_date)
+    print(df[df['client_name'] == 'PhD'].tail(14))

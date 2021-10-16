@@ -40,7 +40,8 @@ class TogglAPI(object):
         else:
             url = 'https://api.track.toggl.com/api/v8/{}'.format(section)
        
-        if len(params) > 0:
+        params_passed = len(params) > 0
+        if params_passed:
             url = url + '?{}'.format(urlencode(params))
 
         return url
@@ -154,11 +155,10 @@ class TogglAPI(object):
 
 if __name__ == '__main__':
     api_token = os.getenv('toggl_api_key')
-    since ='2021-01-23'
+    since ='2021-07-23'
     until = '2021-08-06'
     t = TogglAPI(api_token, '+10:00')
     f = t.get_time_entries( since, until)
-    #print([fi['start'] for fi in f])
-    print(f[1])
+    print(f[1:3])
 
 

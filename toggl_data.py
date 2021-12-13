@@ -83,6 +83,8 @@ class TogglData(object):
             print('Please enter a client from this list - ', self.client_list)
             sys.exit()
 
+        print("Getting data for client - ", client_name)
+
         postgres = PostgresAPI(self.pg_db, self.pg_pass, host = self.pg_host, port = self.pg_port,  user = self.pg_user,  table = self.pg_table)
         df = postgres.get_data(start_date, end_date)
         df = round(df.groupby(['client_name','date'])['duration'].sum()/3600/1000,2)
@@ -115,8 +117,6 @@ class TogglData(object):
         """
 
         start_date = self._deduct_window_date(start_date, window)
-        print('This is the start date - ', start_date)
-
         df = self.sum_time_by_client(client_name, start_date, end_date)
         df['ma'] = round(df.rolling(window=window).mean(),2)
         df.dropna(inplace=True)
@@ -137,6 +137,19 @@ class TogglData(object):
 
         return df
 
+    def get_all_values_dash(self, window = 7):
+
+        '''Outputs the the historical data and mean for '''
+
+        start_date = '2021-02-26'
+        yesterday = (datetime.now()-relativedelta(days=1)).isoformat()[0:10]
+        df = self.sum_time_all_clients_ma(start_date = start_date, end_date = yesterday, window = window)
+        df = df.reset_index()
+        df.columns = ['date', 'client_name', 'duration', 'ma']
+        df_mean = round(df.groupby('client_name')['duration'].mean(),2)
+
+        return df, df_mean
+
 if __name__ == '__main__':
     start_date ='2021-05-01'
     end_date = '2021-10-14'
@@ -144,5 +157,6 @@ if __name__ == '__main__':
     client = 'Survival'
 
     d = TogglData(os.getenv('toggl_api_key'), timezone, os.getenv('postgres_db'),os.getenv('postgres_pass'))
-    df = d.sum_time_all_clients_ma( start_date = start_date, end_date = end_date)
-    print(df[df['client_name'] == 'PhD'].tail(14))
+
+    df, df_mean = d.get_all_values_dash()
+    print(df_mean)

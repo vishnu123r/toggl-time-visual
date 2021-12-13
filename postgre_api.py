@@ -60,6 +60,7 @@ class PostgresAPI(object):
                 print("The data has not been saved. There was an error in establishing the connection to Postgres")
 
         else:
+            print("Data has not been saved. Please recorrect the outlier values")
             return "Please check the time entries. There are outlier values"
 
     def _get_toggl_df(self,start_date, end_date):
@@ -192,6 +193,7 @@ class PostgresAPI(object):
                 self._post_data(df)
 
             elif end_date not in date_list:
+                print(end_date)
                 print("---End date not within the interval---")
                 df_1 = self._get_missings_values_df(missing_dates)
                 df_2 = self._get_values_end_date_df(end_date.isoformat(), date_list)
@@ -223,6 +225,7 @@ class PostgresAPI(object):
                 self._post_data(df)
 
             elif end_date not in date_list:
+                print(end_date)
                 print("---End date not within the interval---")
                 df = self._get_values_end_date_df(end_date.isoformat(), date_list)
                 self._post_data(df)

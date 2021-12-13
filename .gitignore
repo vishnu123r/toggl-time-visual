@@ -1,3 +1,5 @@
 .env
 __pycache__/
 junk.py
+df_mean_toggl.csv
+df_toggl.csv

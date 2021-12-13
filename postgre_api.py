@@ -220,6 +220,9 @@ class PostgresAPI(object):
                     self._post_data(df)
 
             elif start_date not in date_list:
+                if start_date < datetime.strptime('2021-02-26', '%Y-%m-%d'):
+                    print("There is no need to save data")
+                    return "There is no need to save data"
                 print("---Start date not within the interval---")
                 df = self._get_values_start_date_df(start_date.isoformat(), date_list)
                 self._post_data(df)

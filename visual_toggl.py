@@ -50,7 +50,6 @@ df['date'] = pd.to_datetime(df['date'], format='%Y-%m-%d')
 
 
 df_weekly_mean = df.loc[(df['date'] <= yesterday) & (df['date'] >= week_ago)]
-print(df_weekly_mean)
 df_weekly_mean = round(df_weekly_mean.groupby('client_name')['duration'].mean(),2)
 
 def assign_weekly_mean(df, client):

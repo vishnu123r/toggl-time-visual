@@ -18,6 +18,7 @@ class TogglAPI(object):
     def __init__(self, api_token, timezone = '+10:00'):
         if len(timezone) != 6:
             print(timezone)
+            print(len(timezone))
             sys.exit('Incorrect Format - Use the following format +tt:tt')
         try:
             int(timezone[1:3])

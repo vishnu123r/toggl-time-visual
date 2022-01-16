@@ -41,7 +41,6 @@ week_ago = (datetime.now() - relativedelta(days = 8)).isoformat()[0:10].strip()
 yesterday = (datetime.now() - relativedelta(days = 1)).isoformat()[0:10].strip()
 df['date'] = pd.to_datetime(df['date'], format='%Y-%m-%d')
 
-
 df_weekly_mean = df.loc[(df['date'] <= yesterday) & (df['date'] >= week_ago)]
 df_weekly_mean = round(df_weekly_mean.groupby('client_name')['duration'].mean(),2)
 
@@ -103,7 +102,7 @@ def show_ma_phd():
         color=color_code,
         backgroundColor="#1e2130",
                         size=25,
-        #style={"margin-left": "10px"}
+        style={"margin-left": "30px"}
     ),
         daq.LEDDisplay(
         id= "history_ma_phd",
@@ -112,7 +111,7 @@ def show_ma_phd():
         color="#92e0d3",
         backgroundColor="#1e2130",
                         size=25,
-        #style={"margin-left": "5px"}
+        style={"margin-left": "15px"}
    ), 
     ]
 
@@ -128,7 +127,7 @@ def show_ma_fin():
         color=color_code,
         backgroundColor="#1e2130",
                         size=25,
-        #style={"margin-left": "50px"}
+        style={"margin-left": "30px"}
     ),
         daq.LEDDisplay(
         id= "history_ma_financial",
@@ -137,7 +136,7 @@ def show_ma_fin():
         color="#92e0d3",
         backgroundColor="#1e2130",
                         size=25,
-        #style={"margin-left": "5px"}
+        style={"margin-left": "15px"}
    ),
     ]
 
@@ -153,7 +152,7 @@ def show_ma_sleep():
         color=color_code,
         backgroundColor="#1e2130",
                         size=25,
-        #style={"margin-left": "50px"}
+        style={"margin-left": "30px"}
     ),
         daq.LEDDisplay(
         id= "history_ma_sleep",
@@ -162,7 +161,7 @@ def show_ma_sleep():
         color="#92e0d3",
         backgroundColor="#1e2130",
                         size=25,
-        #style={"margin-left": "5px"}
+        style={"margin-left": "15px"}
    ),
     ]
 
@@ -178,7 +177,7 @@ def show_ma_nov():
         color=color_code,
         backgroundColor="#1e2130",
                         size=25,
-        #style={"margin-left": "50px"}
+        style={"margin-left": "30px"}
     ),
         daq.LEDDisplay(
         id= "history_ma_nov",
@@ -187,7 +186,7 @@ def show_ma_nov():
         color="#92e0d3",
         backgroundColor="#1e2130",
                         size=25,
-        #style={"margin-left": "5px"}
+        style={"margin-left": "15px"}
    ),
     ]
 
@@ -204,7 +203,7 @@ def show_ma_survival():
         color = color_code,
         backgroundColor="#1e2130",
                         size=25,
-        #style={"margin-left": "50px"}
+        style={"margin-left": "30px"}
     ),
         daq.LEDDisplay(
         id= "history_ma_survival",
@@ -213,7 +212,7 @@ def show_ma_survival():
         color="#92e0d3",
         backgroundColor="#1e2130",
                         size=25,
-        #style={"margin-left": "5px"}
+        style={"margin-left": "15px"}
    ),
     ]
 
@@ -238,7 +237,7 @@ def offensive_ma():
 
 def defensive_ma():
     return [dbc.Col(html.Div([
-        dbc.Row((html.H4(children = ['Sleep'], style={"margin-left": "70px"}))), 
+        dbc.Row((html.H4(children = ['Sleep'], style={"margin-left": "80px"}))), 
         dbc.Row(show_ma_sleep()),
         dbc.Row(html.Br()),
     ],className = 'border border-dark')

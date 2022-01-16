@@ -20,7 +20,7 @@ app = Dash(
 server = app.server 
 
 #Getting data from postgres and toggl
-d = TogglData(os.getenv('toggl_api_key'),os.getenv('time_zone'), os.getenv('postgres_db'),os.getenv('postgres_pass'))
+d = TogglData(os.getenv('toggl_api_key'), os.getenv('time_zone'), os.getenv('postgres_db'), os.getenv('postgres_pass'))
 df,df_mean = d.get_all_values_dash(window = 14)
 
 ### Dataframe for off_line and def_line

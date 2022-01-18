@@ -29,7 +29,7 @@ class PostgresAPI(object):
         #self.engine_string = "postgresql+psycopg2://{}:{}@{}:{}/{}".format(self.user, self.password, self.host, self.port, self.database)
         self.engine_string = os.getenv('DATABASE_URL')
         self.engine = create_engine(self.engine_string)
-        print(self.engine_string)
+        print("******************" + self.engine_string + "*************")
         self.table_exists = False
 
         try:

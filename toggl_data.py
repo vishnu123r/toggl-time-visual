@@ -141,7 +141,7 @@ class TogglData(object):
 
         '''Outputs the the historical data and mean for '''
 
-        start_date = '2021-02-26'
+        start_date = '2021-11-26'
         yesterday = (datetime.now()-relativedelta(days=1)).isoformat()[0:10]
         df = self.sum_time_all_clients_ma(start_date = start_date, end_date = yesterday, window = window)
         df = df.reset_index()

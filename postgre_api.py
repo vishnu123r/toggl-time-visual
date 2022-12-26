@@ -270,11 +270,12 @@ if __name__=='__main__':
         p = PostgresAPI(os.getenv('postgres_db'), os.getenv('postgres_pass'))
         #print(start_date, "----", end_date)
         df = p.get_data(start_date, end_date)
-        df = round(df.groupby(by= ['date'])['duration'].sum()/3600/1000,2)
-        df = df.reset_index().reindex(columns = ['date', 'duration'] )
-        for date, duration in df.values:
-            has_outlier_time_entry = duration> 35
-            if has_outlier_time_entry:
-                print("There is an issue with the following date and duration (Please recheck them): ", date, duration)
+        df = round(df.groupby(by= ['date', 'client_name'])['duration'].sum()/3600/1000,2)
+        df = df.reset_index().reindex(columns = ['date', 'client_name', 'duration'] )
+        df_sum = df.groupby(by = ['date']['duration'].sum()/3600/1000)
+        # for date, duration in df.values:
+        #     has_outlier_time_entry = duration> 35
+        #     if has_outlier_time_entry:
+        #         print("There is an issue with the following date and duration (Please recheck them): ", date, duration)
             
     print(df)

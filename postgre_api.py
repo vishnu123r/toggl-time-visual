@@ -78,16 +78,27 @@ class PostgresAPI(object):
         return df
 
     def _df_ok(self, df):
-        df = round(df.groupby(by= 'date')['duration'].sum()/3600/1000,2)
-        df = df.reset_index().reindex(columns = ['date', 'duration'] )
-        i = 0
-        for date,duration in df.values:
+        
+        """Checks if the there are any invalid entries from the toggl app. Return s false if the time duration from a day 
+        is more than 35 hours and if the time was not logged for client name "phone off".
+        """
+        
+        df = round(df.groupby(by= ['date', 'client_name'])['duration'].sum()/3600/1000,2)
+        df = df.reset_index().reindex(columns = ['date', 'client_name', 'duration'] )
+        df_sum = df.groupby(by = ['date'])['duration'].sum()
+        df_sum = df_sum.reset_index().reindex(columns = ['date', 'duration'] )
+        
+        no_outlier_values = 0
+        for date,duration in df_sum.values:
             has_outlier_time_entry = duration> 35
             if has_outlier_time_entry:
-                print("There is an issue with the following date and duration (Please recheck them): ", date, duration)
-                i+=1
+                df_date = df[(df["date"] == date)]
+                has_phone_off_client = 'phone off' in df_date['client_name'].values
+                if not has_phone_off_client:
+                    print("There is an issue with the following date and duration (Please recheck them): ", date, duration)
+                    no_outlier_values+=1
 
-        if i > 0:
+        if no_outlier_values > 0:
             return False
 
         else:
@@ -259,23 +270,14 @@ class PostgresAPI(object):
 
 
 if __name__=='__main__':
-    start_date ='2021-07-20'
-    end_date = '2021-07-25'
 
-    date_list = [('2021-07-20','2021-07-25'), ('2021-07-23','2021-07-30'), ('2021-08-21','2021-08-23'), ('2021-07-26','2021-08-22'),
-    ('2021-04-04','2021-05-04'),('2021-07-07','2021-08-25')]
+    #date_list = [('2021-07-20','2021-07-25'), ('2021-07-23','2021-07-30'), ('2021-08-21','2021-08-23'), ('2021-07-26','2021-08-22'),
+    #('2021-04-04','2021-05-04'),('2021-07-07','2021-08-25'), ('2021-11-01', '2021-11-17')]
 
+    date_list = [('2022-11-01', '2022-11-17')]
     
     for start_date, end_date in date_list:
         p = PostgresAPI(os.getenv('postgres_db'), os.getenv('postgres_pass'))
-        #print(start_date, "----", end_date)
         df = p.get_data(start_date, end_date)
-        df = round(df.groupby(by= ['date', 'client_name'])['duration'].sum()/3600/1000,2)
-        df = df.reset_index().reindex(columns = ['date', 'client_name', 'duration'] )
-        df_sum = df.groupby(by = ['date']['duration'].sum()/3600/1000)
-        # for date, duration in df.values:
-        #     has_outlier_time_entry = duration> 35
-        #     if has_outlier_time_entry:
-        #         print("There is an issue with the following date and duration (Please recheck them): ", date, duration)
-            
-    print(df)
+        
+        

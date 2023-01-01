@@ -21,7 +21,7 @@ In order to use this project, you will need to have the following software and a
 You may also need to install additional libraries, such as 'pandas' and 'dash', depending on the specific projects you are working on. These can be easily installed using pip.
 
 ## Getting Started
-- Clone the repository to your local machine: git clone https://github.com/<your-username>/toggltrack-time-data.git
+- Clone the repository to your local machine: git clone https://github.com/vishnu123r/toggl-time-visual.git 
 - Navigate to the project directory: cd toggl-time-visual
 - Install any necessary libraries using pip install -r requirements.txt
 - Set up your TogglTrack API key and PostgreSQL database credentials as environment variables

@@ -28,10 +28,10 @@ You may also need to install additional libraries, such as 'pandas' and 'dash', 
 - Run the script to fetch and save the data: main.py
 - View the Dash app by opening the URL specified in the terminal output
 
-## Known Issues
-- UI/UX and frontend requires improvement
+## Currently Working
 - Deploying the app to Heroku
 - Setting up and connecting a Postgres Database to Heroku
+- UI/UX and frontend improvements
 
 ## Future Plans
 - Incorporate other activites tracked using TogglTrack and create better visualizations

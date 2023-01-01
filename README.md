@@ -3,7 +3,7 @@ This project fetches time data from TogglTrack, saves it to a PostgreSQL databas
 
 Only chosen activities (PhD, Financial, Sleep, No Value, and Survival) is used displyed in the app even though other activities were tracked as well. The graph 'Offense' shows the time spent on financial and Phd in combination. The graph 'Defence' refers to time specnt on No value, Sleep and survival. 
 
-The following gif shows the Dash with graphs based on Dummy data. 
+The following gif shows the Dash app with graphs based on dummy data. 
 
 ![Dash](https://user-images.githubusercontent.com/31379285/210161714-76761996-4864-4f59-a8d3-42a9e1baab07.gif)
 

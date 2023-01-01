@@ -30,7 +30,7 @@ Ramanah Visnupriyan
 ## Known Issues
 - UI/UX and frontend requires improvement
 - Deploying the app to Heroku
-- Setting and connecting a Postgres Database to Heroku
+- Setting up and connecting a Postgres Database to Heroku
 
 ## Future Plans
 - An integration app where we can view other types of personal data (e.g., habits, workouts etc.)

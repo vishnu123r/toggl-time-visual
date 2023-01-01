@@ -38,5 +38,13 @@ You may also need to install additional libraries, such as 'pandas' and 'dash', 
 - An integration app where we can view other types of personal data (e.g., habits, workouts etc.)
 - Build models based on the collected data (e.g., productivity vs the time spent)
 
+## Things I learned
+- PostgreSQL Database
+- Dash
+- Python
+- API
+- HTML/ CSS
+- OOP
+
 ## Author
 Ramanah Visnupriyan

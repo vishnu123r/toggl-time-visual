@@ -1,7 +1,7 @@
 # TogglTrack Time Data Management and Visualization
 This project fetches time data from TogglTrack, saves it to a PostgreSQL database, and visualizes the data as a Dash app. Time spent is recorded using the toggle track app and is categorised under different activities such as Sleep, PhD etc. This project visualises the collected data using graphs as Dash App. 
 
-Only chosen activities (PhD, Financial, Sleep, No Value, and Survival) is used displyed in the app even though other activities were tracked as well. The graph 'Offense' shows the time spent on financial and Phd in combination. The graph 'Defence' refers to time specnt on No value, Sleep and survival. 
+Only chosen activities (PhD, Financial, Sleep, No Value, and Survival) is used displyed in the app even though other activities were tracked as well. The daily averages (last seven days and historical) for each of these activities as displayed as well. The graph 'Offense' shows the time spent on financial and Phd in combination. The graph 'Defence' refers to time specnt on No value, Sleep and survival. 
 
 The following gif shows the Dash app with graphs based on dummy data. 
 

@@ -28,9 +28,6 @@ You may also need to install additional libraries, such as 'pandas' and 'dash', 
 - Run the script to fetch and save the data: main.py
 - View the Dash app by opening the URL specified in the terminal output
 
-## Author
-Ramanah Visnupriyan
-
 ## Known Issues
 - UI/UX and frontend requires improvement
 - Deploying the app to Heroku
@@ -40,3 +37,6 @@ Ramanah Visnupriyan
 - Incorporate other activites tracked using TogglTrack and create better visualizations
 - An integration app where we can view other types of personal data (e.g., habits, workouts etc.)
 - Build models based on the collected data (e.g., productivity vs the time spent)
+
+## Author
+Ramanah Visnupriyan

@@ -37,5 +37,6 @@ Ramanah Visnupriyan
 - Setting up and connecting a Postgres Database to Heroku
 
 ## Future Plans
+- Incorporate other activites tracked using TogglTrack and create better visualizations
 - An integration app where we can view other types of personal data (e.g., habits, workouts etc.)
 - Build models based on the collected data (e.g., productivity vs the time spent)

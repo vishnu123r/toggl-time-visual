@@ -1,11 +1,12 @@
 # TogglTrack Time Data Management and Visualization
-This project fetches time data from TogglTrack, saves it to a PostgreSQL database, and visualizes the data as a Dash app. Keep track of your time and see how you're spending it with this easy-to-use tool.
+This project fetches time data from TogglTrack, saves it to a PostgreSQL database, and visualizes the data as a Dash app. 
 
+![Dash](https://user-images.githubusercontent.com/31379285/210161714-76761996-4864-4f59-a8d3-42a9e1baab07.gif)
 
 ## Features
 - Fetch time data from TogglTrack using the TogglTrack API
 - Save data to a PostgreSQL database for easy storage and retrieval
-- Visualize the data using a Dash app, with customizable graphs and charts
+- Visualize the data using a Dash app, with graphs and charts
 
 ## Prerequisites
 In order to use this project, you will need to have the following software and accounts set up:
@@ -23,12 +24,14 @@ You may also need to install additional libraries, such as 'pandas' and 'dash', 
 - Run the script to fetch and save the data: main.py
 - View the Dash app by opening the URL specified in the terminal output
 
-
-## Contribute to this Project
-- We welcome contributions to this project! If you have ideas for new features or improvements, please feel free to create a new pull request. Help others better manage and visualize their time data with TogglTrack and PostgreSQL.
-
 ## Author
 Ramanah Visnupriyan
 
 ## Known Issues
+- UI/UX and frontend requires improvement
+- Deploying the app to Heroku
+- Setting and connecting a Postgres Database to Heroku
 
+## Future Plans
+- An integration app where we can view other types of personal data (e.g., habits, workouts etc.)
+- Build models based on the collected data (e.g., productivity vs the time spent)
